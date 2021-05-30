@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">YabiChat</string>
+    <string name="loginSuccess">登入成功</string>
+    <string name="loginFail">登入失敗，請稍候再試</string>
+</resources>
