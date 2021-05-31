@@ -2,13 +2,13 @@ package com.example.yabichat.ui
 
 import android.app.AlertDialog
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.yabichat.R
+import com.example.yabichat.model.User
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -17,12 +17,11 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var mAuth: FirebaseAuth
-    private lateinit var userName: String
+    private lateinit var user: User
     private var dbReference: DatabaseReference? = null
     private var storageReference: StorageReference? = null
 
@@ -30,8 +29,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mAuth = Firebase.auth
         setContentView(R.layout.activity_main)
-
-        checkIfLogin()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -43,25 +40,11 @@ class MainActivity : AppCompatActivity() {
     private fun findViewAndGetInstance(){
         dbReference = FirebaseDatabase.getInstance().reference
         storageReference = FirebaseStorage.getInstance().reference
-    }
 
-    private fun checkIfLogin() {
-        if (mAuth.currentUser == null) {
-            val loginIntent: Intent = Intent(this@MainActivity, LoginActivity::class.java)
-            startActivity(loginIntent)
-        } else {
-            greeting()
-        }
-    }
+        // get user info
+        val bundle = intent.extras
+       // user = User(bundle!!.getString("uid"), bundle!!.getString("name"), bundle!!.getString("email"), bundle!!.getString("phone"))
 
-    private fun greeting(){
-        userName = mAuth.currentUser!!.displayName.toString()
-        Toast.makeText(
-            baseContext,
-            "Welcome !"
-                + userName,
-            Toast.LENGTH_SHORT).show()
-        text_greeting.setText(userName)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -90,4 +73,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(getIntent());
     }
 
+    companion object {
+        private const val RC_SIGN_IN = 123
+    }
 }

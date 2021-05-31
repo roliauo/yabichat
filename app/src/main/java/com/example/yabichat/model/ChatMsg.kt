@@ -1,4 +1,4 @@
-package com.example.yabichat.ui
+package com.example.yabichat.model
 
 class ChatMsg {
     private val userName: String? = null
@@ -7,4 +7,6 @@ class ChatMsg {
     private val uuid: String? = null
     private val filePath: String? = null
     private val avatarPath: String? = null //大頭貼路徑
+
+
 }
