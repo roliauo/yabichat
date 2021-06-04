@@ -17,22 +17,21 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var mAuth: FirebaseAuth
-    private lateinit var user: User
+    private var user: User? = null
     private var dbReference: DatabaseReference? = null
     private var storageReference: StorageReference? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mAuth = Firebase.auth
         setContentView(R.layout.activity_main)
+        findViewAndGetInstance()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        // setup menu
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
@@ -40,11 +39,10 @@ class MainActivity : AppCompatActivity() {
     private fun findViewAndGetInstance(){
         dbReference = FirebaseDatabase.getInstance().reference
         storageReference = FirebaseStorage.getInstance().reference
+        
+        user = intent.getParcelableExtra(LoginActivity.BUNDLE_KEY_USER)
 
-        // get user info
-        val bundle = intent.extras
-       // user = User(bundle!!.getString("uid"), bundle!!.getString("name"), bundle!!.getString("email"), bundle!!.getString("phone"))
-
+        text_greeting.text = user!!.name
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -73,7 +71,4 @@ class MainActivity : AppCompatActivity() {
         startActivity(getIntent());
     }
 
-    companion object {
-        private const val RC_SIGN_IN = 123
-    }
 }
