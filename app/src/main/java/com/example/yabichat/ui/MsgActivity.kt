@@ -1,65 +1,91 @@
 package com.example.yabichat.ui
 
-import android.content.SharedPreferences
+import android.content.Intent
 import android.os.Bundle
-import android.text.TextUtils
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
+import com.example.yabichat.Constants
 import com.example.yabichat.R
-import com.example.yabichat.model.ChatMsg
-import com.firebase.ui.database.FirebaseRecyclerAdapter
-import com.google.firebase.auth.FirebaseAuth
+import com.example.yabichat.model.Chat
+import com.example.yabichat.model.Msg
+import com.example.yabichat.model.User
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
+import kotlinx.android.synthetic.main.activity_msg.*
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 class MsgActivity : AppCompatActivity() {
-//    private var dbReference: DatabaseReference? = null
-//    private var storageReference: StorageReference? = null
-//    var sharedPreferences: SharedPreferences? = null
-//    var avatarPath: String? = null
-//    var keyList = ArrayList<String>()
+    private lateinit var et_message: EditText
+    private lateinit var rv_message: RecyclerView
+    private lateinit var btn_send: Button
 
-    private var inputMsg: EditText? = null
-    private var recyclerView: RecyclerView? = null
-
-    private lateinit var database: DatabaseReference
+    private lateinit var dbRef_chatList: DatabaseReference
+    private lateinit var dbRef_msgList: DatabaseReference
+    private lateinit var chatID: String
+    val listData = ArrayList<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_msg)
 
-        findViewAndGetInstance()
+        init()
     }
 
-    private fun findViewAndGetInstance(){
-        inputMsg = findViewById(R.id.input_msg)
-        recyclerView = findViewById(R.id.msg_recyclerView)
+    private fun init(){
+        et_message = findViewById(R.id.et_message)
+        rv_message = findViewById(R.id.rv_message)
+        btn_send = findViewById(R.id.btn_send)
 
-//        dbReference = FirebaseDatabase.getInstance().reference
-//        storageReference = FirebaseStorage.getInstance().reference
+        chatID = intent.getStringExtra(MainActivity.BUNDLE_KEY_CONTACT_UID).toString()
+        // dbRef = Firebase.database.getReference(Constants.DATABASE_CHATS).child(MainActivity.user.uid).child(Constants.DATABASE_CHATS_NODE_MSG_LIST).child(chatID)
+        val dbRef = Firebase.database.getReference(Constants.DATABASE_CHATS).child(MainActivity.user.uid)
+        dbRef_chatList = dbRef.child(Constants.DATABASE_CHATS_NODE_CHAT_LIST).child(chatID)
+        dbRef_msgList = dbRef.child(Constants.DATABASE_CHATS_NODE_MSG_LIST).child(chatID)
 
-        database = Firebase.database.reference
+//        msg_userName.text =
+        btn_send.setOnClickListener {
+            sendMessage()
+        }
+        btn_back.setOnClickListener{
+            val i: Intent = Intent(this, MainActivity::class.java)
+            startActivity(i)
+            finish()
+        }
+
     }
 
+    private fun sendMessage() {
+        val msg = et_message.text.toString()
+        val timestamp = Date().time
+
+        if (msg.isNotEmpty()) {
+            val key: String = dbRef_msgList.push().key.toString()
+            dbRef_msgList.child(key).setValue(Msg(msg, timestamp))
+            dbRef_chatList.setValue(Chat(chatID, msg, timestamp))
+            et_message.setText("")
+
+//            adapter.insertMessage(Message(message, SEND_ID, timeStamp))
+//            rv_message.scrollToPosition(adapter.itemCount - 1)
+        }
+    }
 
 //    private fun sendMsg() {
-//        val msg: String = inputMsg.getText().toString()
+//        val msg: String = et_message.text.toString()
 //        val userName = FirebaseAuth.getInstance().currentUser!!.displayName
 //        val time = Date().time
-//        val key: String? = dbReference.push().getKey()
+//        val key: String? = dbRef.push().getKey()
 //        keyList.add(key)
-//        if (TextUtils.isEmpty(avatarPath)) avatarPath = ""
-//        dbReference.child(key).setValue(ChatMsg(userName, msg, time, uuid, "", avatarPath))
-//        inputMsg.setText("")
+//        //if (TextUtils.isEmpty(avatarPath)) avatarPath = ""
+//        dbRef.child(key).setValue(Chat())
+//        et_message.setText("")
 //        val saveKeyList: MutableSet<String> = HashSet()
 //        for (i in keyList.indices) {
 //            saveKeyList.add(keyList.get(i))

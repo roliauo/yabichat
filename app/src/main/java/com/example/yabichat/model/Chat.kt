@@ -1,3 +1,8 @@
 package com.example.yabichat.model
 
-data class Chat(val id: Int, val member: User, val msg: String? = null, val timestamp: Long = 0 )
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+
+@Parcelize
+data class Chat(val memberUID: String, val lastMsg: String, val timestamp: Long = 0 ): Parcelable
+// data class Chat(val chatID: String, val memberUID: String, val lastMsg: String, val timestamp: Long = 0 ): Parcelable

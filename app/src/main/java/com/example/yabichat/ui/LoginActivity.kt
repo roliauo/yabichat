@@ -1,13 +1,11 @@
 package com.example.yabichat.ui
 
 import android.app.Activity
-import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.yabichat.Constants
 import com.example.yabichat.R
 import com.example.yabichat.model.User
 import com.firebase.ui.auth.AuthUI
@@ -15,19 +13,16 @@ import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.*
-//import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import kotlinx.android.synthetic.main.activity_main.*
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var mAuth: FirebaseAuth
-    private lateinit var database: DatabaseReference
+    private lateinit var dbRef: DatabaseReference
 
     companion object {
         private const val RC_SIGN_IN = 123
-        const val BUNDLE_KEY_USER = "USER"
-        const val DATABASE_USERS = "users"
+        const val BUNDLE_KEY_USER = "BUNDLE_KEY_USER"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +30,7 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         mAuth = Firebase.auth
-        database = Firebase.database.getReference(DATABASE_USERS)
+        dbRef = Firebase.database.getReference(Constants.DATABASE_USERS)
 
         checkIfLogin()
     }
@@ -53,13 +48,14 @@ class LoginActivity : AppCompatActivity() {
         val userObj = User(mAuth.currentUser!!.uid, getUserName(), mAuth.currentUser!!.email, mAuth.currentUser!!.phoneNumber)
 
         // check if the user exists
-        database.orderByChild("uid").equalTo(userObj.uid)
+        // dbRef.orderByChild("TAG").equalTo("VALUE") -> WHERE TAG = "VALUE
+        dbRef.orderByKey().equalTo(userObj.uid) // dbRef.orderByChild(Constants.TAG_UID).equalTo(userObj.uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onCancelled(p0: DatabaseError) {}
 
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (!dataSnapshot.exists()) {
-                    database.child(userObj.uid).setValue(userObj)
+                    dbRef.child(userObj.uid).setValue(userObj)
                 }
 //                for (item in dataSnapshot.children) {
 //                    val user = item.getValue(User::class.java)
