@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -22,6 +23,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_msg.*
 import java.util.*
 
 
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         lateinit var user: User
         const val BUNDLE_KEY_CONTACT_UID = "BUNDLE_KEY_CONTACT_UID"
+        const val BUNDLE_KEY_CONTACT_NAME = "BUNDLE_KEY_CONTACT_NAME"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,20 +43,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun init(){
+        // get contacts list -> click -> msg
         dbRef = Firebase.database.getReference(Constants.DATABASE_USERS) // Contacts
         user = intent.getParcelableExtra(LoginActivity.BUNDLE_KEY_USER)!!
 
-//        dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
-//                override fun onCancelled(p0: DatabaseError) {}
-//
-//                override fun onDataChange(dataSnapshot: DataSnapshot) {
-//
-//                }
-//            })
+        var chatID = "5G8nftNnrUYt41fNN6puKW52xRl2"
+        var memberName = "Test"
 
-        var testUID = "5G8nftNnrUYt41fNN6puKW52xRl2"
         btn_chat.setOnClickListener {
-            chat(testUID)
+//            chat("6aFJCLDK2WQONaBJdGcwNbZLO8x2", "Mandy Lin")
+            chat(chatID, memberName)
         }
 
         text_greeting.text = user.name
@@ -89,10 +88,27 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun chat(contactUID: String) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun chat(contactUID: String, memberName: String) {
         var dbRef_chat = Firebase.database.getReference(Constants.DATABASE_CHATS).child(user.uid)
         var dbRef_chatList = dbRef_chat.child(Constants.DATABASE_CHATS_NODE_CHAT_LIST)
         var dbRef_msgList = dbRef_chat.child(Constants.DATABASE_CHATS_NODE_MSG_LIST)
+
+//        var memberName: String = ""
+//        Firebase.database.getReference(Constants.DATABASE_USERS).child(contactUID).addValueEventListener(object : ValueEventListener {
+//            override fun onDataChange(dataSnapshot: DataSnapshot) {
+//                memberName = dataSnapshot.child(Constants.KEY_NAME).value.toString()
+//                //msg_userName.text = memberName
+//                Log.i(Constants.TAG_DEBUG, dataSnapshot.child(Constants.KEY_NAME).toString())
+//            }
+//
+//            override fun onCancelled(databaseError: DatabaseError) {
+//                //Log.w(TAG, "onCancelled", databaseError.toException())
+//            }
+//        })
 
         dbRef_chatList.orderByKey().equalTo(contactUID).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
@@ -100,14 +116,15 @@ class MainActivity : AppCompatActivity() {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (!dataSnapshot.exists()) {
                         //var chatID = dbRef_chatList.push().key.toString()
-                        dbRef_chatList.child(contactUID).setValue(Chat(contactUID, "", Date().time))
-                        dbRef_msgList.child(contactUID).setValue({})
+                        dbRef_chatList.child(contactUID).setValue(Chat(contactUID, memberName,"", Date().time))
+                        //dbRef_msgList.child(contactUID).setValue({})
                     }
                 }
             })
 
         val i: Intent = Intent(this, MsgActivity::class.java)
         i.putExtra(BUNDLE_KEY_CONTACT_UID, contactUID)
+        i.putExtra(BUNDLE_KEY_CONTACT_NAME, memberName)
         startActivity(i)
     }
 

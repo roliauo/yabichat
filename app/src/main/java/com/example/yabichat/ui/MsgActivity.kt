@@ -2,15 +2,13 @@ package com.example.yabichat.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.yabichat.Constants
 import com.example.yabichat.R
 import com.example.yabichat.model.Chat
 import com.example.yabichat.model.Msg
-import com.example.yabichat.model.User
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -20,47 +18,83 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_msg.*
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 
 class MsgActivity : AppCompatActivity() {
-    private lateinit var et_message: EditText
-    private lateinit var rv_message: RecyclerView
-    private lateinit var btn_send: Button
-
     private lateinit var dbRef_chatList: DatabaseReference
     private lateinit var dbRef_msgList: DatabaseReference
     private lateinit var chatID: String
-    val listData = ArrayList<String>()
+    private lateinit var memberName: String
+    val listData = ArrayList<Msg>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_msg)
 
         init()
+        setMsgRecyclerview()
+    }
+
+    private fun getDatabaseRef(uid: String, memberID: String, tag: String): DatabaseReference{
+        val dbRef = Firebase.database.getReference(Constants.DATABASE_CHATS).child(uid)
+
+        return dbRef.child(tag).child(memberID)
     }
 
     private fun init(){
-        et_message = findViewById(R.id.et_message)
-        rv_message = findViewById(R.id.rv_message)
-        btn_send = findViewById(R.id.btn_send)
-
         chatID = intent.getStringExtra(MainActivity.BUNDLE_KEY_CONTACT_UID).toString()
-        // dbRef = Firebase.database.getReference(Constants.DATABASE_CHATS).child(MainActivity.user.uid).child(Constants.DATABASE_CHATS_NODE_MSG_LIST).child(chatID)
-        val dbRef = Firebase.database.getReference(Constants.DATABASE_CHATS).child(MainActivity.user.uid)
-        dbRef_chatList = dbRef.child(Constants.DATABASE_CHATS_NODE_CHAT_LIST).child(chatID)
-        dbRef_msgList = dbRef.child(Constants.DATABASE_CHATS_NODE_MSG_LIST).child(chatID)
+        memberName = intent.getStringExtra(MainActivity.BUNDLE_KEY_CONTACT_NAME).toString()
 
-//        msg_userName.text =
+        dbRef_chatList = getDatabaseRef(MainActivity.user.uid, chatID, Constants.DATABASE_CHATS_NODE_CHAT_LIST)
+        dbRef_msgList = getDatabaseRef(MainActivity.user.uid, chatID, Constants.DATABASE_CHATS_NODE_MSG_LIST)
+
+        msg_userName.text = memberName
+
         btn_send.setOnClickListener {
             sendMessage()
         }
-        btn_back.setOnClickListener{
-            val i: Intent = Intent(this, MainActivity::class.java)
-            startActivity(i)
-            finish()
-        }
+
+//        btn_back.setOnClickListener{
+//            val i: Intent = Intent(this, MainActivity::class.java)
+//            startActivity(i)
+//        }
 
     }
+
+    private fun setMsgRecyclerview(){
+
+        dbRef_msgList.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                listData.clear()
+//                Log.d(Constants.TAG_DEBUG, "dataSnapshot: ${dataSnapshot.value}")
+                var msgObj: Msg
+
+                for(item in dataSnapshot.children){
+//                    Log.d(Constants.TAG_DEBUG, "name: ${item.child(Constants.KEY_NAME).value}")
+//                    Log.d(Constants.TAG_DEBUG, "msg: ${item.child("msg").value}")
+//                    Log.d(Constants.TAG_DEBUG, "timestamp: ${item.child("timestamp").value}")
+
+                    msgObj = Msg(
+                        item.child("name").value.toString(),
+                        item.child("msg").value.toString(),
+                        item.child("timestamp").value as Long,
+                        item.child("tag").value.toString()
+                    )
+                    listData.add(msgObj)
+                }
+                rv_message.scrollToPosition(listData.size - 1)
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                //Log.w(TAG, "onCancelled", databaseError.toException())
+            }
+        })
+
+        val layoutManager = LinearLayoutManager(this)
+        layoutManager.orientation = LinearLayoutManager.VERTICAL
+        rv_message.layoutManager = layoutManager
+        rv_message.adapter = MsgAdapter(listData)
+    }
+
 
     private fun sendMessage() {
         val msg = et_message.text.toString()
@@ -68,100 +102,20 @@ class MsgActivity : AppCompatActivity() {
 
         if (msg.isNotEmpty()) {
             val key: String = dbRef_msgList.push().key.toString()
-            dbRef_msgList.child(key).setValue(Msg(msg, timestamp))
-            dbRef_chatList.setValue(Chat(chatID, msg, timestamp))
-            et_message.setText("")
 
-//            adapter.insertMessage(Message(message, SEND_ID, timeStamp))
-//            rv_message.scrollToPosition(adapter.itemCount - 1)
+            // send
+            dbRef_msgList.child(key).setValue(Msg(MainActivity.user.name.toString(), msg, timestamp, Constants.SEND_ID))
+            dbRef_chatList.setValue(Chat(chatID, memberName, msg, timestamp))
+
+            // update member's chat data
+            var dbRef_member_msgList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_CHATS_NODE_MSG_LIST)
+            var dbRef_member_chatList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_CHATS_NODE_CHAT_LIST)
+            dbRef_member_msgList.child(key).setValue(Msg(MainActivity.user.name.toString(), msg, timestamp, Constants.RECEIVE_ID))
+            dbRef_member_chatList.setValue(Chat(MainActivity.user.uid, MainActivity.user.name.toString(), msg, timestamp))
+
+            et_message.setText("")
+            rv_message.scrollToPosition(listData.size - 1)
         }
     }
 
-//    private fun sendMsg() {
-//        val msg: String = et_message.text.toString()
-//        val userName = FirebaseAuth.getInstance().currentUser!!.displayName
-//        val time = Date().time
-//        val key: String? = dbRef.push().getKey()
-//        keyList.add(key)
-//        //if (TextUtils.isEmpty(avatarPath)) avatarPath = ""
-//        dbRef.child(key).setValue(Chat())
-//        et_message.setText("")
-//        val saveKeyList: MutableSet<String> = HashSet()
-//        for (i in keyList.indices) {
-//            saveKeyList.add(keyList.get(i))
-//        }
-//        sharedPreferences.edit().putStringSet("keyList", saveKeyList).commit()
-//    }
-
-//    fun basicReadWrite() {
-//        // [START write_message]
-//        // Write a message to the database
-//        val database = Firebase.database
-//        val myRef = database.getReference("message")
-//
-//        myRef.setValue("Hello, World!")
-//        // [END write_message]
-//
-//        // [START read_message]
-//        // Read from the database
-//        myRef.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(dataSnapshot: DataSnapshot) {
-//                // This method is called once with the initial value and again
-//                // whenever data at this location is updated.
-//                val value = dataSnapshot.getValue<String>()
-//                Log.d(TAG, "Value is: $value")
-//            }
-//
-//            override fun onCancelled(error: DatabaseError) {
-//                // Failed to read value
-//                Log.w(TAG, "Failed to read value.", error.toException())
-//            }
-//        })
-//        // [END read_message]
-//    }
-//
-//    private fun displayChatMsg() {
-//        try {
-//            var adapter = object :
-//                FirebaseRecyclerAdapter<ChatMessage?, com.example.r30_a.chattool.Controller.MainActivity.ChatMessageHolder>(
-//                    ChatMessage::class.java,
-//                    R.layout.message,
-//                    com.example.r30_a.chattool.Controller.MainActivity.ChatMessageHolder::class.java,
-//                    reference.limitToLast(10)
-//                ) {
-//                override fun onCreateViewHolder(
-//                    parent: ViewGroup,
-//                    viewType: Int
-//                ): com.example.r30_a.chattool.Controller.MainActivity.ChatMessageHolder {
-//                    val view: View =
-//                        LayoutInflater.from(context).inflate(R.layout.message, parent, false)
-//                    return com.example.r30_a.chattool.Controller.MainActivity.ChatMessageHolder(view)
-//                }
-//
-//                override fun populateViewHolder(
-//                    viewHolder: com.example.r30_a.chattool.Controller.MainActivity.ChatMessageHolder,
-//                    model: ChatMessage?,
-//                    position: Int
-//                ) {
-//                    viewHolder.setValues(model)
-//                    viewHolder.img_avatar_other.setOnClickListener(View.OnClickListener { v: View? ->
-//                        showInfo(
-//                            position
-//                        )
-//                    })
-//                    viewHolder.img_avatar_user.setOnClickListener(View.OnClickListener { v: View? ->
-//                        showInfo(
-//                            position
-//                        )
-//                    })
-//                }
-//            }
-//            recyclerView!!.layoutManager = linearLayoutManager
-//            recyclerView!!.setHasFixedSize(true)
-//            recyclerView!!.adapter = adapter
-//            recyclerView!!.scrollToPosition(adapter.getItemCount() - 1)
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//    }
 }

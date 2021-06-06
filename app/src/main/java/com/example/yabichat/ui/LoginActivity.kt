@@ -3,6 +3,7 @@ package com.example.yabichat.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.yabichat.Constants
@@ -21,7 +22,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var dbRef: DatabaseReference
 
     companion object {
-        private const val RC_SIGN_IN = 123
+        const val RC_SIGN_IN = 123
         const val BUNDLE_KEY_USER = "BUNDLE_KEY_USER"
     }
 
@@ -49,12 +50,14 @@ class LoginActivity : AppCompatActivity() {
 
         // check if the user exists
         // dbRef.orderByChild("TAG").equalTo("VALUE") -> WHERE TAG = "VALUE
-        dbRef.orderByKey().equalTo(userObj.uid) // dbRef.orderByChild(Constants.TAG_UID).equalTo(userObj.uid)
+        // dbRef.orderByChild(Constants.TAG_UID).equalTo(userObj.uid)
+        dbRef.orderByKey().equalTo(userObj.uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onCancelled(p0: DatabaseError) {}
 
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (!dataSnapshot.exists()) {
+                    Log.i(Constants.TAG_DEBUG, "!dataSnapshot.exists()")
                     dbRef.child(userObj.uid).setValue(userObj)
                 }
 //                for (item in dataSnapshot.children) {
