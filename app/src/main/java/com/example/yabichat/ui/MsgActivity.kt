@@ -56,6 +56,7 @@ class MsgActivity : AppCompatActivity() {
 //        btn_back.setOnClickListener{
 //            val i: Intent = Intent(this, MainActivity::class.java)
 //            startActivity(i)
+//            finish()
 //        }
 
     }
@@ -76,10 +77,9 @@ class MsgActivity : AppCompatActivity() {
                         item.child("timestamp").value as Long,
                         item.child("tag").value.toString()
                     )
-//                    if (msgObj !in listData){
-//                        listData.add(msgObj)
-//                    }
-                    listData.add(msgObj)
+                    if (msgObj !in listData){
+                        listData.add(msgObj)
+                    }
                 }
                 rv_message.scrollToPosition(listData.size - 1)
             }
