@@ -60,12 +60,9 @@ class MsgActivity : AppCompatActivity() {
 
     }
 
-    private fun setMsgRecyclerview(){
-
-        dbRef_msgList.addValueEventListener(object : ValueEventListener {
+    private fun getMsgData(){
+        dbRef_msgList.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                listData.clear()
-//                Log.d(Constants.TAG_DEBUG, "dataSnapshot: ${dataSnapshot.value}")
                 var msgObj: Msg
 
                 for(item in dataSnapshot.children){
@@ -79,6 +76,9 @@ class MsgActivity : AppCompatActivity() {
                         item.child("timestamp").value as Long,
                         item.child("tag").value.toString()
                     )
+//                    if (msgObj !in listData){
+//                        listData.add(msgObj)
+//                    }
                     listData.add(msgObj)
                 }
                 rv_message.scrollToPosition(listData.size - 1)
@@ -88,6 +88,10 @@ class MsgActivity : AppCompatActivity() {
                 //Log.w(TAG, "onCancelled", databaseError.toException())
             }
         })
+    }
+
+    private fun setMsgRecyclerview(){
+        getMsgData()
 
         val layoutManager = LinearLayoutManager(this)
         layoutManager.orientation = LinearLayoutManager.VERTICAL
@@ -114,7 +118,9 @@ class MsgActivity : AppCompatActivity() {
             dbRef_member_chatList.setValue(Chat(MainActivity.user.uid, MainActivity.user.name.toString(), msg, timestamp))
 
             et_message.setText("")
-            rv_message.scrollToPosition(listData.size - 1)
+            //rv_message.scrollToPosition(listData.size - 1)
+
+            getMsgData()
         }
     }
 

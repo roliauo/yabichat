@@ -4,12 +4,11 @@ import android.app.AlertDialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.yabichat.Constants
 import com.example.yabichat.R
 import com.example.yabichat.model.Chat
@@ -20,15 +19,16 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_msg.*
+import kotlinx.android.synthetic.main.item_contacts.*
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var mAuth: FirebaseAuth
     private lateinit var dbRef: DatabaseReference
+    val listData = ArrayList<User>()
 
     companion object {
         lateinit var user: User
@@ -40,23 +40,62 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         init()
+        setContactsRecyclerView()
     }
 
     private fun init(){
         // get contacts list -> click -> msg
+        mAuth = Firebase.auth
         dbRef = Firebase.database.getReference(Constants.DATABASE_USERS) // Contacts
-        user = intent.getParcelableExtra(LoginActivity.BUNDLE_KEY_USER)!!
+        // user = intent.getParcelableExtra(LoginActivity.BUNDLE_KEY_USER)!!
+        user = User(mAuth.currentUser!!.uid, getUserName(), mAuth.currentUser!!.email, mAuth.currentUser!!.phoneNumber)
+
+        text_greeting.text = user.name
 
         var chatID = "5G8nftNnrUYt41fNN6puKW52xRl2"
         var memberName = "Test"
 
-        btn_chat.setOnClickListener {
-//            chat("6aFJCLDK2WQONaBJdGcwNbZLO8x2", "Mandy Lin")
-            chat(chatID, memberName)
-        }
+//        btn_chat.setOnClickListener {
+////            chat("6aFJCLDK2WQONaBJdGcwNbZLO8x2", "Mandy Lin")
+//            chat(chatID, memberName)
+//        }
 
-        text_greeting.text = user.name
+    }
 
+    private fun getContractsData(){
+        dbRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                var userObj: User
+
+                for(item in dataSnapshot.children){
+                    userObj = User(
+                        item.child("uid").value.toString(),
+                        item.child("name").value.toString(),
+                        item.child("email").value.toString(),
+                        item.child("phone").value.toString(),
+                        item.child("contacts").value as MutableList<String>?
+                    )
+                    if (userObj !in listData && userObj.uid != user.uid){
+                        listData.add(userObj)
+                    }
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                //Log.w(TAG, "onCancelled", databaseError.toException())
+            }
+        })
+    }
+
+    private fun setContactsRecyclerView(){
+
+        // get user list
+        getContractsData()
+
+        val layoutManager = LinearLayoutManager(this)
+        layoutManager.orientation = LinearLayoutManager.VERTICAL
+        rv_contracts.layoutManager = layoutManager
+        rv_contracts.adapter = ContactsAdapter(listData)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -88,27 +127,10 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-    }
-
-    private fun chat(contactUID: String, memberName: String) {
+    fun chat(contactUID: String, memberName: String) {
         var dbRef_chat = Firebase.database.getReference(Constants.DATABASE_CHATS).child(user.uid)
         var dbRef_chatList = dbRef_chat.child(Constants.DATABASE_CHATS_NODE_CHAT_LIST)
         var dbRef_msgList = dbRef_chat.child(Constants.DATABASE_CHATS_NODE_MSG_LIST)
-
-//        var memberName: String = ""
-//        Firebase.database.getReference(Constants.DATABASE_USERS).child(contactUID).addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(dataSnapshot: DataSnapshot) {
-//                memberName = dataSnapshot.child(Constants.KEY_NAME).value.toString()
-//                //msg_userName.text = memberName
-//                Log.i(Constants.TAG_DEBUG, dataSnapshot.child(Constants.KEY_NAME).toString())
-//            }
-//
-//            override fun onCancelled(databaseError: DatabaseError) {
-//                //Log.w(TAG, "onCancelled", databaseError.toException())
-//            }
-//        })
 
         dbRef_chatList.orderByKey().equalTo(contactUID).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
@@ -132,5 +154,13 @@ class MainActivity : AppCompatActivity() {
         finish();
         startActivity(getIntent());
     }
+
+    private fun getUserName(): String =
+        when (true) {
+            mAuth.currentUser!!.displayName != null -> mAuth.currentUser!!.displayName.toString()
+            mAuth.currentUser!!.email != null -> mAuth.currentUser!!.email.toString()
+            mAuth.currentUser!!.phoneNumber != null -> mAuth.currentUser!!.phoneNumber.toString()
+            else -> "UserName"
+        }
 
 }

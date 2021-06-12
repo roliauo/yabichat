@@ -78,7 +78,7 @@
         android:layout_weight="1"
         android:scrollbars="vertical"
         tools:itemCount="20"
-        tools:listitem="@layout/message_item">
+        tools:listitem="@layout/item_message">
 
     </androidx.recyclerview.widget.RecyclerView>
 

@@ -116,6 +116,6 @@ tools:context=".ui.MsgActivity">
         tools:itemCount="20"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="120dp"
-        tools:listitem="@layout/message_item" />
+        tools:listitem="@layout/item_message" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
