@@ -35,17 +35,17 @@ class MsgActivity : AppCompatActivity() {
     }
 
     private fun getDatabaseRef(uid: String, memberID: String, tag: String): DatabaseReference{
-        val dbRef = Firebase.database.getReference(Constants.DATABASE_CHATS).child(uid)
+        val dbRef = Firebase.database.getReference(tag).child(uid)
 
-        return dbRef.child(tag).child(memberID)
+        return dbRef.child(memberID)
     }
 
     private fun init(){
-        chatID = intent.getStringExtra(MainActivity.BUNDLE_KEY_CONTACT_UID).toString()
-        memberName = intent.getStringExtra(MainActivity.BUNDLE_KEY_CONTACT_NAME).toString()
+        chatID = intent.getStringExtra(ContactsFragment.BUNDLE_KEY_CONTACT_UID).toString()
+        memberName = intent.getStringExtra(ContactsFragment.BUNDLE_KEY_CONTACT_NAME).toString()
 
-        dbRef_chatList = getDatabaseRef(MainActivity.user.uid, chatID, Constants.DATABASE_CHATS_NODE_CHAT_LIST)
-        dbRef_msgList = getDatabaseRef(MainActivity.user.uid, chatID, Constants.DATABASE_CHATS_NODE_MSG_LIST)
+        dbRef_chatList = getDatabaseRef(MainActivity.user.uid, chatID, Constants.DATABASE_CHATS)
+        dbRef_msgList = getDatabaseRef(MainActivity.user.uid, chatID, Constants.DATABASE_MESSAGES)
 
         msg_userName.text = memberName
 
@@ -53,11 +53,9 @@ class MsgActivity : AppCompatActivity() {
             sendMessage()
         }
 
-//        btn_back.setOnClickListener{
-//            val i: Intent = Intent(this, MainActivity::class.java)
-//            startActivity(i)
-//            finish()
-//        }
+        btn_back.setOnClickListener{
+            finish()
+        }
 
     }
 
@@ -112,8 +110,8 @@ class MsgActivity : AppCompatActivity() {
             dbRef_chatList.setValue(Chat(chatID, memberName, msg, timestamp))
 
             // update member's chat data
-            var dbRef_member_msgList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_CHATS_NODE_MSG_LIST)
-            var dbRef_member_chatList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_CHATS_NODE_CHAT_LIST)
+            var dbRef_member_msgList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_MESSAGES)
+            var dbRef_member_chatList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_CHATS)
             dbRef_member_msgList.child(key).setValue(Msg(MainActivity.user.name.toString(), msg, timestamp, Constants.RECEIVE_ID))
             dbRef_member_chatList.setValue(Chat(MainActivity.user.uid, MainActivity.user.name.toString(), msg, timestamp))
 

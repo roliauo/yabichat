@@ -2,92 +2,111 @@ package com.example.yabichat.ui
 
 import android.app.AlertDialog
 import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import com.example.yabichat.Constants
 import com.example.yabichat.R
-import com.example.yabichat.model.Chat
 import com.example.yabichat.model.User
 import com.firebase.ui.auth.AuthUI
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var dbRef: DatabaseReference
-    val listData = ArrayList<User>()
+//    val fragmentManager: FragmentManager = supportFragmentManager
+//    val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+    private lateinit var dbRef_users: DatabaseReference
+    private lateinit var dbRef_chatList: DatabaseReference
+    private lateinit var dbRef_msgList: DatabaseReference
+    private val fragmentContacts: ContactsFragment = ContactsFragment()
+    private val fragmentChats: ChatsFragment = ChatsFragment()
+    private lateinit var tabLayout: TabLayout
 
     companion object {
         lateinit var user: User
-        const val BUNDLE_KEY_CONTACT_UID = "BUNDLE_KEY_CONTACT_UID"
-        const val BUNDLE_KEY_CONTACT_NAME = "BUNDLE_KEY_CONTACT_NAME"
+        const val BUNDLE_KEY_USER = "BUNDLE_KEY_USER"
+        const val BUNDLE_KEY_CHAT_LIST = "BUNDLE_KEY_CHAT_LIST"
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         init()
+        setUpFragments()
+    }
 
-        getContractsData()
+    override fun onResume() {
+        super.onResume()
+        //setUpFragments()
     }
 
     private fun init(){
-        dbRef = Firebase.database.getReference(Constants.DATABASE_USERS) // Contacts
         user = intent.getParcelableExtra(LoginActivity.BUNDLE_KEY_USER)!!
+        dbRef_users = Firebase.database.getReference(Constants.DATABASE_USERS)
+        dbRef_chatList = Firebase.database.getReference(Constants.DATABASE_CHATS).child(user.uid)
+        dbRef_msgList = Firebase.database.getReference(Constants.DATABASE_MESSAGES).child(user.uid)
 
-        text_greeting.text = user.name
     }
 
-    private fun getContractsData(){
-        dbRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                var userObj: User
+    private fun setUpFragments(){
+        val fragmentManager: FragmentManager = supportFragmentManager
+        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+        fragmentTransaction.add(R.id.main_fragment_container, fragmentContacts, "Contacts")
+        fragmentTransaction.add(R.id.main_fragment_container, fragmentChats, "Chats")
+        fragmentTransaction.hide(fragmentChats)
+        fragmentTransaction.commit()
 
-                for(item in dataSnapshot.children){
-                    userObj = User(
-                        item.child("uid").value.toString(),
-                        item.child("name").value.toString(),
-                        item.child("email").value.toString(),
-                        item.child("phone").value.toString(),
-                        item.child("contacts").value as MutableList<String>?
-                    )
-                    if (userObj !in listData && userObj.uid != user.uid){
-                        listData.add(userObj)
-                    }
-                }
-                setContactsRecyclerView()
+        val bundleContacts = Bundle()
+        bundleContacts.putParcelable(BUNDLE_KEY_USER, user)
+        fragmentContacts.setArguments(bundleContacts)
+
+        // on tab selected
+        tabLayout = findViewById(R.id.tabLayoutMain)
+        tabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                onFragmentChange(tab.getPosition());
+//                when (tab.position) {
+//                    0 -> {
+//                        fragmentTransaction.hide(fragmentChats)
+//                        fragmentTransaction.show(fragmentContacts)
+//                    }
+//                    1 -> {
+//                        fragmentTransaction.hide(fragmentContacts)
+//                        fragmentTransaction.show(fragmentChats)
+//                    }
+//                }
+//                fragmentTransaction.commit()
             }
 
-            override fun onCancelled(databaseError: DatabaseError) {
-                //Log.w(TAG, "onCancelled", databaseError.toException())
-            }
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
         })
     }
 
-    inner class ChatListener: View.OnClickListener{
-        override fun onClick(v: View?) {
-            val id = v?.id
-            Log.d(Constants.TAG_DEBUG, "id: "+ id)
-            val user = listData.get(id!!)
-            chat(user.uid, user.name);
-        }
-    }
+    private fun onFragmentChange(index: Int){
+        val fragmentManager = supportFragmentManager
+        val fragmentTransaction = fragmentManager.beginTransaction()
 
-    private fun setContactsRecyclerView(){
-        val layoutManager = LinearLayoutManager(this)
-        layoutManager.orientation = LinearLayoutManager.VERTICAL
-        rv_contracts.layoutManager = layoutManager
-        rv_contracts.adapter = ContactsAdapter(listData, ChatListener())
+        when (index) {
+            0 -> {
+                fragmentTransaction.hide(fragmentChats)
+                fragmentTransaction.show(fragmentContacts)
+            }
+            1 -> {
+                fragmentTransaction.hide(fragmentContacts)
+                fragmentTransaction.show(fragmentChats)
+            }
+        }
+        fragmentTransaction.commit()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -119,28 +138,14 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    fun chat(contactUID: String, memberName: String) {
-        var dbRef_chatList = Firebase.database.getReference(Constants.DATABASE_CHATS).child(user.uid).child(Constants.DATABASE_CHATS_NODE_CHAT_LIST)
-
-        dbRef_chatList.orderByKey().equalTo(contactUID).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {}
-
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    if (!dataSnapshot.exists()) {
-                        dbRef_chatList.child(contactUID).setValue(Chat(contactUID, memberName,"", Date().time))
-                    }
-                }
-            })
-
-        val i: Intent = Intent(this, MsgActivity::class.java)
-        i.putExtra(BUNDLE_KEY_CONTACT_UID, contactUID)
-        i.putExtra(BUNDLE_KEY_CONTACT_NAME, memberName)
-        startActivity(i)
-    }
 
     private fun reload() {
         finish();
         startActivity(getIntent());
     }
+
+}
+
+private fun Bundle.putParcelable(bundleKeyChatList: String, dbRef: DatabaseReference) {
 
 }
