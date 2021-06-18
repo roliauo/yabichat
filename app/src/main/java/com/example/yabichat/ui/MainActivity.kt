@@ -67,24 +67,13 @@ class MainActivity : AppCompatActivity() {
 
         val bundleContacts = Bundle()
         bundleContacts.putParcelable(BUNDLE_KEY_USER, user)
-        fragmentContacts.setArguments(bundleContacts)
+        fragmentContacts.arguments = bundleContacts
 
         // on tab selected
         tabLayout = findViewById(R.id.tabLayoutMain)
         tabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                onFragmentChange(tab.getPosition());
-//                when (tab.position) {
-//                    0 -> {
-//                        fragmentTransaction.hide(fragmentChats)
-//                        fragmentTransaction.show(fragmentContacts)
-//                    }
-//                    1 -> {
-//                        fragmentTransaction.hide(fragmentContacts)
-//                        fragmentTransaction.show(fragmentChats)
-//                    }
-//                }
-//                fragmentTransaction.commit()
+                onFragmentChange(tab.position);
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab) {}
@@ -141,7 +130,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun reload() {
         finish();
-        startActivity(getIntent());
+        startActivity(intent);
     }
 
 }
