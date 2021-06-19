@@ -12,4 +12,5 @@ object Constants {
     const val TAG_DEBUG = "TAG_DEBUG"
     const val SEND_ID = "SEND_ID"
     const val RECEIVE_ID = "RECEIVE_ID"
+    const val CHAT_BOT = "ChatBot"
 }

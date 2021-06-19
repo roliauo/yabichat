@@ -2,6 +2,7 @@ package com.example.yabichat.ui
 
 import android.app.AlertDialog
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -122,6 +123,15 @@ class MainActivity : AppCompatActivity() {
                         DialogInterface.OnClickListener { dialog, which -> }).create()
                 builder.show()
             }
+//            R.id.menu_about -> {
+//
+//            }
+//            R.id.menu_chatbot -> {
+//                val i: Intent = Intent(activity, MsgActivity::class.java)
+//                i.putExtra(ContactsFragment.BUNDLE_KEY_CONTACT_UID, contactUID)
+//                i.putExtra(ContactsFragment.BUNDLE_KEY_CONTACT_NAME, memberName)
+//                startActivity(i)
+//            }
         }
 
         return true

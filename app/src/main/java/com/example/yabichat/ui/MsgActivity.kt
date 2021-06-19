@@ -1,6 +1,7 @@
 package com.example.yabichat.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -15,7 +16,10 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.project.chatbot.utils.BotResponse
+import com.project.chatbot.utils.Time
 import kotlinx.android.synthetic.main.activity_msg.*
+import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -101,8 +105,10 @@ class MsgActivity : AppCompatActivity() {
     private fun sendMessage() {
         val msg = et_message.text.toString()
         val timestamp = Date().time
+        var response = ""
 
         if (msg.isNotEmpty()) {
+
             val key: String = dbRef_msgList.push().key.toString()
 
             // send
@@ -120,7 +126,73 @@ class MsgActivity : AppCompatActivity() {
             //rv_message.scrollToPosition(listData.size - 1)
 
             getMsgData()
+
+            if (chatID == Constants.CHAT_BOT) {
+                botResponse(msg)
+//                response = BotResponse.basicResponses(msg)
+//                // res
+//                var resKey = dbRef_msgList.push().key.toString()
+//                dbRef_msgList.child(resKey).setValue(Msg(Constants.CHAT_BOT, response, timestamp, Constants.RECEIVE_ID))
+//                dbRef_chatList.setValue(Chat(MainActivity.user.uid, MainActivity.user.name, response, timestamp))
+
+            }
+
+
         }
     }
+
+
+    private fun botResponse(message: String) {
+        val timestamp = Date().time
+
+        GlobalScope.launch {
+            //延遲回應時間
+            delay(1000)
+
+            withContext(Dispatchers.Main) {
+                //取得回應
+                val response = BotResponse.basicResponses(message)
+
+                // res
+                var resKey = dbRef_msgList.push().key.toString()
+                dbRef_msgList.child(resKey).setValue(Msg(Constants.CHAT_BOT, response, timestamp, Constants.RECEIVE_ID))
+                dbRef_chatList.setValue(Chat(MainActivity.user.uid, MainActivity.user.name, response, timestamp))
+
+                getMsgData()
+
+                //開啟Google
+                when (response) {
+                    com.project.chatbot.utils.Constants.OPEN_GOOGLE -> {
+                        val site = Intent(Intent.ACTION_VIEW)
+                        site.data = Uri.parse("https://www.google.com/")
+                        startActivity(site)
+                    }
+                    com.project.chatbot.utils.Constants.OPEN_SEARCH -> {
+                        val site = Intent(Intent.ACTION_VIEW)
+                        val searchTerm: String? = message.substringAfterLast("search")
+                        site.data = Uri.parse("https://www.google.com/search?&q=$searchTerm")
+                        startActivity(site)
+                    }
+
+                }
+            }
+        }
+    }
+
+//    private fun customBotMessage(message: String) {
+//
+//        GlobalScope.launch {
+//            delay(1000)
+//            withContext(Dispatchers.Main) {
+//                val timeStamp = Time.timeStamp()
+//                messagesList.add(Message(message,
+//                    com.project.chatbot.utils.Constants.RECEIVE_ID, timeStamp))
+//                adapter.insertMessage(Message(message,
+//                    com.project.chatbot.utils.Constants.RECEIVE_ID, timeStamp))
+//
+//                rv_messages.scrollToPosition(adapter.itemCount - 1)
+//            }
+//        }
+//    }
 
 }

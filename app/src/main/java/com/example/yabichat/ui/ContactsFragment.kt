@@ -46,6 +46,12 @@ class ContactsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_contacts, container, false)
     }
 
+    override fun onResume() {
+        super.onResume()
+        init()
+        getContactsData()
+    }
+
     private fun init(){
         dbRef = Firebase.database.getReference(Constants.DATABASE_USERS) // Contacts
         Log.d(Constants.TAG_DEBUG, "--------arguments: " + arguments.toString())
@@ -54,6 +60,9 @@ class ContactsFragment : Fragment() {
     }
 
     private fun getContactsData(){
+        listData.clear()
+        listData.add(User(Constants.CHAT_BOT, Constants.CHAT_BOT))
+
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 var userObj: User
