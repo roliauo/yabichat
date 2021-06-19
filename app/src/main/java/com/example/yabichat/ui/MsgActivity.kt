@@ -106,14 +106,15 @@ class MsgActivity : AppCompatActivity() {
             val key: String = dbRef_msgList.push().key.toString()
 
             // send
-            dbRef_msgList.child(key).setValue(Msg(MainActivity.user.name.toString(), msg, timestamp, Constants.SEND_ID))
+            dbRef_msgList.child(key).setValue(Msg(MainActivity.user.name, msg, timestamp, Constants.SEND_ID))
             dbRef_chatList.setValue(Chat(chatID, memberName, msg, timestamp))
 
             // update member's chat data
             var dbRef_member_msgList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_MESSAGES)
             var dbRef_member_chatList = getDatabaseRef(chatID, MainActivity.user.uid, Constants.DATABASE_CHATS)
-            dbRef_member_msgList.child(key).setValue(Msg(MainActivity.user.name.toString(), msg, timestamp, Constants.RECEIVE_ID))
-            dbRef_member_chatList.setValue(Chat(MainActivity.user.uid, MainActivity.user.name.toString(), msg, timestamp))
+            dbRef_member_msgList.child(key).setValue(Msg(MainActivity.user.name, msg, timestamp, Constants.RECEIVE_ID))
+            dbRef_member_chatList.setValue(Chat(MainActivity.user.uid,
+                MainActivity.user.name, msg, timestamp))
 
             et_message.setText("")
             //rv_message.scrollToPosition(listData.size - 1)

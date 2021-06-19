@@ -48,7 +48,8 @@ class ContactsFragment : Fragment() {
 
     private fun init(){
         dbRef = Firebase.database.getReference(Constants.DATABASE_USERS) // Contacts
-        user = MainActivity.user
+        Log.d(Constants.TAG_DEBUG, "--------arguments: " + arguments.toString())
+        user = arguments?.get(MainActivity.BUNDLE_KEY_USER) as User //MainActivity.user
 
     }
 

@@ -1,60 +1,105 @@
 package com.example.yabichat.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.yabichat.Constants
 import com.example.yabichat.R
+import com.example.yabichat.model.Chat
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import kotlinx.android.synthetic.main.fragment_chats.*
+import kotlinx.android.synthetic.main.fragment_contacts.*
+import kotlinx.android.synthetic.main.item_chats.view.*
+import java.util.ArrayList
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [ChatsFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class ChatsFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private lateinit var dbRef_chats: DatabaseReference
+    val listData = ArrayList<Chat>()
+
+    companion object {
+
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+        init()
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        init()
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_chats, container, false)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ChatsFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ChatsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onResume() {
+        super.onResume()
+        init()
     }
+
+    private fun init(){
+        dbRef_chats = Firebase.database.getReference(Constants.DATABASE_CHATS).child(MainActivity.user.uid)
+        getChatsData()
+
+    }
+
+    private fun getChatsData(){
+        dbRef_chats.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                var chatObj: Chat
+//                listData.clear()
+                for(item in dataSnapshot.children){
+                    chatObj = Chat(
+                        item.child("memberUID").value.toString(),
+                        item.child("memberName").value.toString(),
+                        item.child("lastMsg").value.toString(),
+                        item.child("timestamp").value as Long
+                    )
+                    if (chatObj !in listData){
+                        listData.add(chatObj)
+                    }
+//                    listData.add(chatObj)
+                }
+                setChatsRecyclerView()
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                //Log.w(TAG, "onCancelled", databaseError.toException())
+            }
+        })
+    }
+
+    private fun setChatsRecyclerView(){
+//        Log.d(Constants.TAG_DEBUG, "listData: " + listData.size)
+        val layoutManager = LinearLayoutManager(this.context)
+        layoutManager.orientation = LinearLayoutManager.VERTICAL
+        rv_chats.layoutManager = layoutManager
+//        val adapter = ChatsAdapter(listData)
+//        adapter.notifyDataSetChanged()
+        rv_chats.adapter =  ChatsAdapter(listData)
+
+    }
+
+
+    inner class onDeleteChatListener: View.OnClickListener{
+        override fun onClick(v: View?) {
+            val index = v?.id
+            // val target = listData.get(index!!)
+            Log.d(Constants.TAG_DEBUG, "target: "+ index + "--- " + listData.size)
+            // dbRef_chats.child(target.memberUID).removeValue()
+        }
+    }
+
 }

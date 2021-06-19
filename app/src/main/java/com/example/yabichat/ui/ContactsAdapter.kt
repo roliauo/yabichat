@@ -29,15 +29,24 @@ class ContactsAdapter(private val dataSet: ArrayList<User>, listener: View.OnCli
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.itemView.id = position
         holder.itemView.item_textView.text = dataSet[position].name
-        holder.itemView.item_imageView.setImageResource(R.drawable.ic_ghost)
+        holder.itemView.item_imageView.setImageResource(R.drawable.yabichat_g)
+        holder.itemView.setBackgroundColor((Color.parseColor("#ffffff")))
+        holder.itemView.item_textView.setTextColor((Color.parseColor("#255000")))
 
-        if( position%2 == 0){
-            holder.itemView.setBackgroundColor((Color.parseColor("#673AB7")))
-            holder.itemView.item_textView.setTextColor((Color.parseColor("#ffffff")))
-        }
-        else{
-            holder.itemView.setBackgroundColor((Color.parseColor("#FF9800")))
-        }
+//        if( position%2 == 0){
+////            holder.itemView.setBackgroundColor((Color.parseColor("#673AB7")))
+////            holder.itemView.item_textView.setTextColor((Color.parseColor("#ffffff")))
+//
+//            holder.itemView.setBackgroundColor((Color.parseColor("#457C15")))
+//            holder.itemView.item_textView.setTextColor((Color.parseColor("#ffffff")))
+//        }
+//        else{
+////            holder.itemView.setBackgroundColor((Color.parseColor("#FF9800")))
+//
+//            holder.itemView.setBackgroundColor((Color.parseColor("#ffffff")))
+//            holder.itemView.item_textView.setTextColor((Color.parseColor("#457C15")))
+//
+//        }
 
     }
 
